@@ -25,10 +25,21 @@ const fetch_spaces = async () => {
     return spaces;
 }
 
+const fetch_folders = async () => {
+    const spaces = await fetch_spaces();
+    const folders_pr = spaces.map(space => clickup.spaces.getFolders(space.id));
+    let folders = await Promise.all(folders_pr);
+    folders = folders.map(fl => fl.body.folders).flat();
+    return folders;
+}
+
 const fetch_lists = async () => {
     const spaces = await fetch_spaces();
-    const lists_pr = spaces.map(space => clickup.spaces.getFolderlessLists(space.id));
+    let lists_pr = spaces.map(space => clickup.spaces.getFolderlessLists(space.id));
+    const folders = await fetch_folders();
     let lists = await Promise.all(lists_pr);
+    lists_pr = folders.map(folder => clickup.folders.getLists(folder.id));
+    lists = lists.concat(await Promise.all(lists_pr));
     lists = lists.map(ls => ls.body.lists).flat();
     return lists;
 }

@@ -1,0 +1,49 @@
+ClickUp CLI
+===========
+
+This is a simple app to display tasks from ClickUp service. It is in early
+stages of development, so no nice packaging yet and nothing set in stone
+yet.
+
+Dependencies
+------------
+
+It is written in JavaScript. So it requires Node.js to run. Apart from
+that, it combines two packages
+https://www.npmjs.com/package/cli-table[cli-table] and
+https://www.npmjs.com/package/clickup.js[clickup.js].
+
+You can install those using following command:
+
+---------------------------------------------------------------------------
+npm install cli-table clickup.js
+---------------------------------------------------------------------------
+
+Usage
+-----
+
+To be able to use it, you need to obtain a personal token from ClickUp and
+put it into a configuration file `~/.clickup/config`. This configuration
+file is _json_ and you can see the example one bellow.
+
+
+---------------------------------------------------------------------------
+{
+    "token": "pk_12345678_1234567890ABCDEFGHIJKLMNOPQRSTUV",
+    "sync_always": true
+}
+---------------------------------------------------------------------------
+
+Configuration options
+~~~~~~~~~~~~~~~~~~~~~
+
+`token`
+^^^^^^^
+
+Your personal token to access ClickUp API.
+
+`sync_always`
+^^^^^^^^^^^^^
+
+With every call update local cache first. Slower, but you don't risk being
+out of date.

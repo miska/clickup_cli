@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const process = require('process');
 const os = require('os');
 const Table = require('cli-table');
 const Clickup = require('clickup.js');
@@ -97,9 +98,21 @@ const task_compare = (a,b) => {
     return a.date_created < b.date_created ? -1 : 1;
 }
 
+const read_items = (type) => {
+    let ret = [];
+    fs.readdirSync(path.join(config_dir, type + 's')).forEach(it => {
+        ret.push(JSON.parse(fs.readFileSync(path.join(config_dir, type + 's', it), 'utf8')));
+    });
+    return ret;
+}
+
 const read_tasks = async () => {
-    assert("Not implemented yet");
-    return [];
+    let tmp = '';
+    ['team','space','folder','list'].forEach(h => {
+        tmp = read_items(h);
+        cache_names(h+'s', tmp);
+    });
+    return read_items('task');
 }
 
 const task_hiearchy = (task) => {
@@ -124,7 +137,7 @@ const task_hiearchy = (task) => {
 
 const main = async () => {
     let tasks = [];
-    if(settings.sync_always == true)
+    if(settings.sync_always == true || process.argv[2] == 'sync')
         tasks = await fetch_tasks();
     else
         tasks = await read_tasks();

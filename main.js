@@ -11,7 +11,22 @@ const token = settings.token;
 
 const clickup = new Clickup(token);
 
+let name_cache = {
+    teams: {},
+    spaces: {},
+    folders: {},
+    lists: {},
+    tasks: {}
+};
+
+const cache_names = (type, items) => {
+    items.forEach(item => {
+        name_cache[type][item.id] = item.name;
+    });
+}
+
 const dump_cache = (name, cache) => {
+    cache_names(name,cache);
     const dir = path.join(config_dir, name);
     fs.rmSync(dir, { recursive: true, force: true})
     fs.mkdirSync(dir, { recursive: true });
@@ -82,13 +97,42 @@ const task_compare = (a,b) => {
     return a.date_created < b.date_created ? -1 : 1;
 }
 
+const read_tasks = async () => {
+    assert("Not implemented yet");
+    return [];
+}
+
+const task_hiearchy = (task) => {
+    let ret = '';
+    ['team','space','folder','list'].forEach(h => {
+        let id = task[h];
+        if(!id)
+            return;
+        id = id.id;
+        let name = name_cache[h + 's'];
+        if(!name)
+            return;
+        name = name[id];
+        if(!name)
+            return;
+        if(ret.length > 0)
+            ret += '/';
+        ret += name;
+    });
+    return ret;
+}
+
 const main = async () => {
     let tasks = [];
-    tasks = await fetch_tasks();
-    let table = new Table({ head: [ 'Id', 'Status', 'Priority', 'Task']});
+    if(settings.sync_always == true)
+        tasks = await fetch_tasks();
+    else
+        tasks = await read_tasks();
+    let table = new Table({ head: [ 'Id', 'Status', 'Hiearchy', 'Priority', 'Task']});
     tasks.sort(task_compare).forEach(ts => table.push([
         ts.id,
         ts.status.status + ` (${ts.status.orderindex})`,
+        task_hiearchy(ts),
         ts.priority ? ts.priority.priority + ` (${ts.priority.orderindex})`: '',
         ts.name
     ]));

@@ -4,14 +4,28 @@ const os = require('os');
 const Table = require('cli-table');
 const Clickup = require('clickup.js');
 
-const settings = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.clickup'), 'utf8'));
+const config_dir = path.join(os.homedir(), '.clickup');
+
+const settings = JSON.parse(fs.readFileSync(path.join(config_dir, 'config'), 'utf8'));
 const token = settings.token;
 
 const clickup = new Clickup(token);
 
+const dump_cache = (name, cache) => {
+    const dir = path.join(config_dir, name);
+    fs.rmSync(dir, { recursive: true, force: true})
+    fs.mkdirSync(dir, { recursive: true });
+    cache.forEach(item => {
+        fs.writeFile(path.join(dir, `${item.id}.json`),
+                     JSON.stringify(item),
+                     err => { if(err) { console.log(err)} });
+    });
+}
+
 const fetch_teams = () => {
     return new Promise((resolve, reject) => {
         clickup.authorization.getAuthorizedTeams().then(teams => {
+            dump_cache('teams', teams.body.teams);
             resolve(teams.body.teams);
         })
     });
@@ -22,6 +36,7 @@ const fetch_spaces = async () => {
     const spaces_pr = teams.map(team => clickup.teams.getSpaces(team.id));
     let spaces = await Promise.all(spaces_pr);
     spaces = spaces.map(sp => sp.body.spaces).flat();
+    dump_cache('spaces', spaces);
     return spaces;
 }
 
@@ -30,6 +45,7 @@ const fetch_folders = async () => {
     const folders_pr = spaces.map(space => clickup.spaces.getFolders(space.id));
     let folders = await Promise.all(folders_pr);
     folders = folders.map(fl => fl.body.folders).flat();
+    dump_cache('folders', spaces);
     return folders;
 }
 
@@ -41,6 +57,7 @@ const fetch_lists = async () => {
     lists_pr = folders.map(folder => clickup.folders.getLists(folder.id));
     lists = lists.concat(await Promise.all(lists_pr));
     lists = lists.map(ls => ls.body.lists).flat();
+    dump_cache('lists', lists);
     return lists;
 }
 
@@ -49,6 +66,7 @@ const fetch_tasks = async () => {
     const tasks_pr = lists.map(list => clickup.lists.getTasks(list.id));
     let tasks = await Promise.all(tasks_pr);
     tasks = tasks.map(ts => ts.body.tasks).flat();
+    dump_cache('tasks', tasks);
     return tasks;
 }
 
@@ -65,7 +83,8 @@ const task_compare = (a,b) => {
 }
 
 const main = async () => {
-    let tasks = await fetch_tasks();
+    let tasks = [];
+    tasks = await fetch_tasks();
     let table = new Table({ head: [ 'Id', 'Status', 'Priority', 'Task']});
     tasks.sort(task_compare).forEach(ts => table.push([
         ts.id,

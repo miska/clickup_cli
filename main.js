@@ -1,9 +1,10 @@
+#!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
 const process = require('process');
 const os = require('os');
 const Table = require('cli-table');
-const Clickup = require('clickup.js');
+const { Clickup } = require('clickup.js');
 
 const config_dir = path.join(os.homedir(), '.clickup');
 

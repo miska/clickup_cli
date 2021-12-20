@@ -1,0 +1,16 @@
+{
+  "name": "clickup_cli",
+  "version": "0.1.0",
+  "description": "Simple CLI for ClickUp",
+  "main": "main.js",
+  "repository": "https://github.com/miska/clickup_cli.git",
+  "author": "Michal Hrusecky <michal@hrusecky.net>",
+  "license": "GPL-3.0+",
+  "dependencies": {
+    "cli-table": "^0.3.11",
+    "clickup.js": "^3.0.1"
+  },
+  "bin": {
+      "tasks": "main.js"
+  }
+}

@@ -6,7 +6,8 @@ const os = require('os');
 const Table = require('cli-table');
 const { Clickup } = require('clickup.js');
 
-const config_dir = path.join(os.homedir(), '.clickup');
+const config_dir = path.join(os.homedir(), '.config', 'clickup');
+const cache_dir = path.join(os.homedir(), '.cache', 'clickup');
 
 const settings = JSON.parse(fs.readFileSync(path.join(config_dir, 'config'), 'utf8'));
 const token = settings.token;
@@ -29,7 +30,7 @@ const cache_names = (type, items) => {
 
 const dump_cache = (name, cache) => {
     cache_names(name,cache);
-    const dir = path.join(config_dir, name);
+    const dir = path.join(cache_dir, name);
     fs.rmSync(dir, { recursive: true, force: true})
     fs.mkdirSync(dir, { recursive: true });
     cache.forEach(item => {
@@ -101,8 +102,8 @@ const task_compare = (a,b) => {
 
 const read_items = (type) => {
     let ret = [];
-    fs.readdirSync(path.join(config_dir, type + 's')).forEach(it => {
-        ret.push(JSON.parse(fs.readFileSync(path.join(config_dir, type + 's', it), 'utf8')));
+    fs.readdirSync(path.join(cache_dir, type + 's')).forEach(it => {
+        ret.push(JSON.parse(fs.readFileSync(path.join(cache_dir, type + 's', it), 'utf8')));
     });
     return ret;
 }

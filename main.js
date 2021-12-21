@@ -13,8 +13,6 @@ const cache_dir = path.join(os.homedir(), '.cache', 'clickup');
 const settings = JSON.parse(fs.readFileSync(path.join(config_dir, 'config'), 'utf8'));
 const token = settings.token;
 
-const  filter_types = ['team','space','folder','list', 'task'];
-
 const clickup = new Clickup(token);
 
 let filter = {
@@ -130,7 +128,10 @@ const read_tasks = async () => {
 
 const task_hiearchy = (task) => {
     let ret = '';
-    ['team','space','folder','list'].forEach(h => {
+    if(task.team_id && name_cache['teams'][task.team_id]) {
+        ret = name_cache['teams'][task.team_id];
+    }
+    ['space','folder','list'].forEach(h => {
         let id = task[h];
         if(!id)
             return;
@@ -178,7 +179,7 @@ const parse_args = () => {
             i++;
             continue;
         }
-        filter_types.forEach(h => {
+        ['team', 'space','folder','list', 'task'].forEach(h => {
             if(args[i] === h) {
                 i++
                 filter[h + 's'].push(args[i]);
@@ -219,7 +220,14 @@ const main = async () => {
     let table = new Table({ head: [ 'Id', 'Status', 'Hiearchy', 'Priority', 'Task']});
     tasks = tasks.filter(task => {
         let ret = true;
-        filter_types.forEach(type => {
+        if(filter['teams'].lenght > 0) {
+            ret = false;
+            filter['teams'].forEach(name => {
+                if(name.toLowerCase() == name_cache['teams'][task['team_id']].toLowerCase())
+                    ret = true;
+            });
+        }
+        ['space','folder','list', 'task'].forEach(type => {
             if(!ret)
                 return;
             let index = type + 's';

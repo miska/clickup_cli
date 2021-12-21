@@ -7,8 +7,14 @@ const os = require('os');
 const Table = require('cli-table');
 const { Clickup } = require('clickup.js');
 
-const config_dir = path.join(os.homedir(), '.config', 'clickup');
-const cache_dir = path.join(os.homedir(), '.cache', 'clickup');
+const config_dir = path.join(
+    (process.env.XDG_CONFIG_HOME && process.env.XDG_CONFIG_HOME.length > 0) ?
+    process.env.XDG_CONFIG_HOME : path.join(os.homedir(), '.config'), 'clickup'
+);
+const cache_dir = path.join(
+    (process.env.XDG_CACHE_HOME && process.env.XDG_CACHE_HOME.length > 0) ?
+    process.env.XDG_CACHE_HOME : path.join(os.homedir(), '.cache'), 'clickup'
+);
 
 const settings = JSON.parse(fs.readFileSync(path.join(config_dir, 'config'), 'utf8'));
 const token = settings.token;

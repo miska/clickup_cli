@@ -15,7 +15,7 @@ https://www.npmjs.com/package/clickup.js[clickup.js].
 You can install it using the following command:
 
 ---------------------------------------------------------------------------
-npm install -g
+yarn install
 ---------------------------------------------------------------------------
 
 Usage
@@ -23,13 +23,18 @@ Usage
 
 To be able to use it, you need to obtain a personal token from ClickUp
 (_User settings -> My Apps -> Apps_) and put it into a configuration file
-`~/.clickup/config`. This configuration file is _json_ and you can see the
-example one bellow.
+`~/.config/clickup/config`. This configuration file is _json_ and you can
+see the example one bellow.
 
 ---------------------------------------------------------------------------
 {
     "token": "pk_12345678_1234567890ABCDEFGHIJKLMNOPQRSTUV",
-    "sync_always": true
+    "sync_always": true,
+    "style": {
+        "head": ["yellow"],
+        "border": ["cyan"],
+        "tasks": ["green", "bgBlack"]
+    }
 }
 ---------------------------------------------------------------------------
 
@@ -46,3 +51,71 @@ Your personal token to access ClickUp API.
 
 With every call update local cache first. Slower, but you don't risk being
 out of date.
+
+`style`
+^^^^^^^
+
+Style to apply to the table. For more options see documentation
+of https://www.npmjs.com/package/cli-table[cli-table] and
+https://github.com/marak/colors.js[colors.js]. Typical setup is
+color styling of header using
+https://github.com/marak/colors.js#text-colors[text colors] and
+https://github.com/marak/colors.js#background-colors[background
+colors]. Except of `head` you can also similarly style border
+using `border` key and tasks using `tasks` key.
+
+CLI Usage
+---------
+
+Simplest usage is simply calling the application.
+
+---------------------------------------------------------------------------
+tasks
+---------------------------------------------------------------------------
+
+This will output the list of all your tasks in a nice ascii
+table.
+
+You can use additional commands and filters to modify the
+behaviour.
+
+Commands
+~~~~~~~~
+
+`sync`
+^^^^^^
+
+Calling the application with sync command will cause it to
+always download latest version of tasks from the web.
+
+Filters
+-------
+
+Apart from commands, you can append filters to the command line. Syntax is
+`filter value`. Filter can be one of the following keywords:
+
+* team
+* space
+* folder
+* list
+* task
+
+The value argument is the case-insensitively compared to the name of the
+appropriate structure in task hierarchy and only tasks that belong to the
+matching structures are printed. If multiple filters of the same type are
+specified the result is union of all matching tasks.
+
+Example usage would be:
+
+---------------------------------------------------------------------------
+tasks space Home Folder IT list Infrastructure
+---------------------------------------------------------------------------
+
+This will output all tasks that are in space _Home_ in folder _IT_ and in the
+list _Infrastructure_.
+
+---------------------------------------------------------------------------
+tasks space Home space Work
+---------------------------------------------------------------------------
+
+This will output all tasks from both _Home_ and _Work_ spaces.

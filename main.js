@@ -210,6 +210,36 @@ const apply_styles = (styles, row) => {
     });
 }
 
+const format_due = (date) => {
+    if(!date)
+        return '';
+    let now = Date.now();
+    let diff = date - now;
+    let od = new Date();
+    od.setTime(date);
+
+    const z_pad = (a) => {
+        if(a > 10)
+            return a;
+        return '0'+a;
+    }
+
+    const date_format = (od) => {
+        return `${od.getFullYear()}-${z_pad(od.getMonth())}-${z_pad(od.getDay())} ${z_pad(od.getHours())}:${z_pad(od.getMinutes())}`;
+    }
+
+    if(diff < 0) {
+        return `OVERDUE: ${date_format(od)}`;
+    }
+    if(diff < 48 * 3600 * 1000) {
+        return `in ${Math.round(diff / (3600 * 1000))} hours`;
+    }
+    if(diff < 10 * 24 * 3600 * 1000) {
+        return `in ${Math.round(diff / (3600 * 1000 * 24))} days`;
+    }
+    return `${date_format(od)}`;
+}
+
 const main = async () => {
     let tasks = [];
     parse_args();
@@ -217,7 +247,7 @@ const main = async () => {
         tasks = await fetch_tasks();
     else
         tasks = await read_tasks();
-    let table = new Table({ head: [ 'Id', 'Status', 'Hiearchy', 'Priority', 'Task']});
+    let table = new Table({ head: [ 'Id', 'Status', 'Hiearchy', 'Priority', 'Due Date', 'Task']});
     tasks = tasks.filter(task => {
         let ret = true;
         if(filter['teams'].lenght > 0) {
@@ -253,6 +283,7 @@ const main = async () => {
         ts.status.status.toLowerCase() + ` (${ts.status.orderindex})`,
         task_hiearchy(ts),
         ts.priority ? ts.priority.priority + ` (${ts.priority.orderindex})`: '',
+        format_due(ts.due_date),
         ts.name
     ])));
     console.log(table.toString());

@@ -49,14 +49,11 @@ const dump_cache = (name, cache) => {
     });
 }
 
-const fetch_teams = () => {
-    return new Promise((resolve, reject) => {
-        clickup.authorization.getAuthorizedTeams().then(teams => {
-            dump_cache('teams', teams.body.teams);
-            resolve(teams.body.teams);
-        })
-    });
-}
+const fetch_teams = () => clickup.authorization.getAuthorizedTeams().then(teams => {
+    dump_cache('teams', teams.body.teams);
+    return teams.body.teams;
+})
+
 
 const fetch_spaces = async () => {
     const teams = await fetch_teams();

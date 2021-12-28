@@ -37,6 +37,8 @@ let name_cache = {
     tasks: {}
 };
 
+let tasks = [];
+
 const cache_names = (type, items) => {
     items.forEach(item => {
         name_cache[type][item.id] = item.name;
@@ -46,7 +48,6 @@ const cache_names = (type, items) => {
 const dump_cache = (name, cache) => {
     cache_names(name,cache);
     const dir = path.join(cache_dir, name);
-    fs.rmSync(dir, { recursive: true, force: true})
     fs.mkdirSync(dir, { recursive: true });
     cache.forEach(item => {
         fs.writeFile(path.join(dir, `${item.id}.json`),
@@ -55,50 +56,62 @@ const dump_cache = (name, cache) => {
     });
 }
 
-const fetch_teams = () => clickup.authorization.getAuthorizedTeams().then(teams => {
+let todo = 1;
+
+const fetch_tasks = (list) => clickup.lists.getTasks(list.id).then(tsks => {
+    dump_cache('tasks', tsks.body.tasks);
+    tsks.body.tasks.forEach(task => {
+        tasks.push(task);
+    });
+    todo--;
+});
+
+const fetch_lists = (folder) => clickup.folders.getLists(folder.id).then(lists => {
+    dump_cache('lists', lists.body.lists);
+    lists.body.lists.forEach(list => {
+        todo++;
+        fetch_tasks(list);
+    });
+    todo--;
+});
+
+const fetch_folders = (space) => clickup.spaces.getFolders(space.id).then(folders => {
+    dump_cache('folders', folders.body.folders);
+    folders.body.folders.forEach(folder => {
+        todo++;
+        fetch_lists(folder);
+    });
+    todo--;
+});
+
+const fetch_folder_less = (space) => clickup.spaces.getFolderlessLists(space.id).then(lists => {
+    dump_cache('lists', lists.body.lists);
+    lists.body.lists.forEach(list => {
+        todo++;
+        fetch_tasks(list);
+    });
+    todo--;
+});
+
+const fetch_spaces = (team) => clickup.teams.getSpaces(team.id).then(spaces => {
+    dump_cache('spaces', spaces.body.spaces);
+    spaces.body.spaces.forEach(space => {
+        todo++;
+        fetch_folders(space);
+        todo++;
+        fetch_folder_less(space);
+    });
+    todo--;
+});
+
+const fetch_everything = () => clickup.authorization.getAuthorizedTeams().then(teams => {
     dump_cache('teams', teams.body.teams);
-    return teams.body.teams;
-})
-
-
-const fetch_spaces = async () => {
-    const teams = await fetch_teams();
-    const spaces_pr = teams.map(team => clickup.teams.getSpaces(team.id));
-    let spaces = await Promise.all(spaces_pr);
-    spaces = spaces.map(sp => sp.body.spaces).flat();
-    dump_cache('spaces', spaces);
-    return spaces;
-}
-
-const fetch_folders = async () => {
-    const spaces = await fetch_spaces();
-    const folders_pr = spaces.map(space => clickup.spaces.getFolders(space.id));
-    let folders = await Promise.all(folders_pr);
-    folders = folders.map(fl => fl.body.folders).flat();
-    dump_cache('folders', spaces);
-    return folders;
-}
-
-const fetch_lists = async () => {
-    const spaces = await fetch_spaces();
-    let lists_pr = spaces.map(space => clickup.spaces.getFolderlessLists(space.id));
-    const folders = await fetch_folders();
-    let lists = await Promise.all(lists_pr);
-    lists_pr = folders.map(folder => clickup.folders.getLists(folder.id));
-    lists = lists.concat(await Promise.all(lists_pr));
-    lists = lists.map(ls => ls.body.lists).flat();
-    dump_cache('lists', lists);
-    return lists;
-}
-
-const fetch_tasks = async () => {
-    const lists = await fetch_lists();
-    const tasks_pr = lists.map(list => clickup.lists.getTasks(list.id));
-    let tasks = await Promise.all(tasks_pr);
-    tasks = tasks.map(ts => ts.body.tasks).flat();
-    dump_cache('tasks', tasks);
-    return tasks;
-}
+    teams.body.teams.forEach(team => {
+        todo++;
+        fetch_spaces(team);
+    });
+    todo--;
+});
 
 const task_compare = (a,b) => {
     if(a.priority && !b.priority)
@@ -243,12 +256,18 @@ const format_due = (date) => {
     return `${date_format(od)}`;
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 const main = async () => {
-    let tasks = [];
     parse_args();
-    if(settings.sync_always == true)
-        tasks = await fetch_tasks();
-    else
+    if(settings.sync_always == true) {
+        fs.rmSync(cache_dir, { recursive: true, force: true});
+        await fetch_everything();
+        while(todo != 0)
+            await sleep(200);
+    } else
         tasks = await read_tasks();
     let table = new Table({ head: [ 'Id', 'Status', 'Hiearchy', 'Priority', 'Due Date', 'Task']});
     tasks = tasks.filter(task => {
